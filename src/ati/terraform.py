@@ -41,7 +41,11 @@ def iter_states(root=None):
         if '.terraform' in dnames:
             try:
                 os.chdir(dpath)
-                output = sh.terraform("state", "pull").stdout.decode('utf-8')
+                terraform_state = sh.terraform("state", "pull")
+                error = terraform_state.stdout.decode('utf-8')
+                output = terraform_state.stdout.decode('utf-8')
+                if 'Empty state' in error:
+                    continue
                 start_index = output.find('{')
                 if start_index < 0:
                     start_index = 0
@@ -52,11 +56,11 @@ def iter_states(root=None):
 
 def iterresources(sources):
     for source in sources:
-	if type(source) in [unicode, str]:
+        if type(source) in [unicode, str]:
             with open(source, 'r') as json_file:
                 state = json.load(json_file)
-	else:
-	    state = source
+        else:
+            state = source
         for module in state['modules']:
             name = module['path'][-1]
             for key, resource in list(module['resources'].items()):
